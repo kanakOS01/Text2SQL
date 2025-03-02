@@ -1,6 +1,6 @@
 from urllib.parse import urlparse
 
-def check_valid_uri_and(uri: str) -> bool:
+def check_valid_uri(uri: str) -> bool:
     """
     Check if the URI is valid and return the scheme if it is valid
 
