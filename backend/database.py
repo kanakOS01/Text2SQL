@@ -5,7 +5,7 @@ from backend.config import settings
 
 SQLALCHEMY_DATABASE_URL = settings.DATABASE_URL
 
-engine = create_async_engine(SQLALCHEMY_DATABASE_URL, echo=False)
+engine = create_async_engine(SQLALCHEMY_DATABASE_URL, echo=False, future=True)
 AsyncSessionLocal = sessionmaker(bind=engine, autoflush=False, class_=AsyncSession)
 
 

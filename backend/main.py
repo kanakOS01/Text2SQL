@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi.middleware.cors import CORSMiddleware
-from backend.routers import auth
+from backend.routers import databases, query
 from sqlalchemy import text
 
 from backend.database import get_db
@@ -18,6 +18,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.include_router(databases.router)
+app.include_router(query.router)
 
 
 @app.get("/")
