@@ -2,16 +2,8 @@ from typing import Optional
 from pydantic import BaseModel
 
 
-class UserRegister(BaseModel):
-    username: str
-    password: str
-
-
-class Token(BaseModel):
-    access_token: str
-    token_type: str
-
-
-class TokenData(BaseModel):
-    id: Optional[int] = None
-
+class Database(BaseModel):
+    id: int
+    db_name: str
+    db_uri: str
+    db_schema: Optional[str]
