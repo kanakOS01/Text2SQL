@@ -20,7 +20,6 @@ app.add_middleware(
 )
 
 
-app.include_router(auth.router)
 
 
 @app.get("/")
