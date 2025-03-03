@@ -1,5 +1,6 @@
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy import text
 
 from backend.config import settings
 
@@ -11,5 +12,5 @@ AsyncSessionLocal = sessionmaker(bind=engine, autoflush=False, class_=AsyncSessi
 
 async def get_db():
     async with AsyncSessionLocal() as db:
-        await db.execute("PRAGMA foreign_keys = ON;")
+        await db.execute(text("PRAGMA foreign_keys = ON;"))
         yield db
