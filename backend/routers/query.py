@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.future import select
 from sqlalchemy import text
+import re
 
 from backend.database import get_db
 from backend.routers.databases import get_database_schema
@@ -25,9 +26,11 @@ async def generate_sql(db_id: int, text_query: str, db: AsyncSession = Depends(g
         
         db_scheme = extract_scheme(db_uri)
         schema = await get_database_schema(db_id, db)
-        text2sql_model = Text2SQLModel(db_scheme, schema)
+        text2sql_model = Text2SQLModel(db_scheme, schema['schema'])
         response = text2sql_model.infer(text_query)
-        return {"sql_query": response}
+        cleaned_sql = re.sub(r"```sql\n|```", "", response.content).strip()
+
+        return {"sql_query": cleaned_sql}
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Database error: {e}")
     
@@ -42,6 +45,9 @@ async def execute_sql(db_id: int, sql_query: str, db: AsyncSession = Depends(get
         db_uri = result.scalar_one_or_none()
         if not db_uri:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Database not found")
+        
+        if db_uri.startswith("mysql://"):
+            db_uri = db_uri.replace("mysql://", "mysql+aiomysql://") # Replace with async MySQL driver
 
         engine = create_async_engine(db_uri, echo=False, future=True)
         async with engine.begin() as conn:

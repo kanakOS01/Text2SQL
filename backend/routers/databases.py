@@ -76,21 +76,42 @@ async def get_database_schema(db_id: int, db: AsyncSession = Depends(get_db)):
         if not db_uri:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Database not found")
 
+        if db_uri.startswith("mysql://"):
+            db_uri = db_uri.replace("mysql://", "mysql+aiomysql://") 
+
         engine = create_async_engine(db_uri, echo=False, future=True)
         async with engine.begin() as conn:
             db_scheme = extract_scheme(db_uri)
-            if "sqlite" in db_scheme:
-                schema_query = text("SELECT name FROM sqlite_master WHERE type='table';")
-            elif "postgresql" in db_scheme:
-                schema_query = text("SELECT table_name FROM information_schema.tables WHERE table_schema='public';")
-            elif "mysql" in db_scheme:
-                schema_query = text("SHOW TABLES;")
+            
+            if "mysql" in db_scheme:
+                schema_query = text("""
+                    SELECT COLUMN_NAME, COLUMN_TYPE, IS_NULLABLE, COLUMN_DEFAULT, COLUMN_KEY 
+                    FROM INFORMATION_SCHEMA.COLUMNS 
+                    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table_name;
+                """)
+                table_query = text("SHOW TABLES;")
             else:
                 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Unsupported database type: {db_scheme}")
-
-            result = await conn.execute(schema_query)
+            
+            result = await conn.execute(table_query)
             tables = [row[0] for row in result.fetchall()]
+            
+            schema_details = {}
 
-        return {"tables": tables}
+            # Fetch schema details for each table
+            for table in tables:
+                table_schema_result = await conn.execute(schema_query, {"table_name": table})
+                schema_details[table] = [
+                    {
+                        "column_name": row[0],
+                        "data_type": row[1],
+                        "nullable": row[2],
+                        "default_value": row[3],
+                        "key": row[4] if len(row) > 4 else None  # MySQL-specific column key
+                    }
+                    for row in table_schema_result.fetchall()
+                ]
+
+        return {"schema": schema_details}
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Database error: {e}")

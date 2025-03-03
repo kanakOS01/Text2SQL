@@ -15,7 +15,7 @@ class Text2SQLModel:
             messages=[
             {
                 "role": "developer",
-                "content": "You are an SQL expert. Your task is to convert the given text query into an SQL query."
+                "content": "You are an SQL expert. Your task is to convert the given text query into an SQL query. NOTE - Only write the SQL query."
             },
             {
                 "role": "user",

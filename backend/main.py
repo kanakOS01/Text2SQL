@@ -7,7 +7,7 @@ from sqlalchemy import text
 from backend.database import get_db
 
 
-app = FastAPI()
+app = FastAPI(debug=True)
 ORIGINS = ["*"]
 
 
