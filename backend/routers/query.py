@@ -1,13 +1,14 @@
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-from sqlalchemy.future import select
-from sqlalchemy import text
 import re
 
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import text
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+from sqlalchemy.future import select
+
 from backend.database import get_db
+from backend.models import UserDatabase
 from backend.routers.databases import get_database_schema
 from backend.text2sql import Text2SQLModel
-from backend.models import UserDatabase
 from backend.utils import extract_scheme
 
 router = APIRouter(prefix="/query", tags=["Text to SQL Query"])
@@ -23,17 +24,17 @@ async def generate_sql(db_id: int, text_query: str, db: AsyncSession = Depends(g
         db_uri = result.scalar_one_or_none()
         if not db_uri:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Database not found")
-        
+
         db_scheme = extract_scheme(db_uri)
         schema = await get_database_schema(db_id, db)
-        text2sql_model = Text2SQLModel(db_scheme, schema['schema'])
+        text2sql_model = Text2SQLModel(db_scheme, schema["schema"])
         response = text2sql_model.infer(text_query)
         cleaned_sql = re.sub(r"```sql\n|```", "", response.content).strip()
 
         return {"sql_query": cleaned_sql}
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Database error: {e}")
-    
+
 
 @router.post("/{db_id}/execute_sql")
 async def execute_sql(db_id: int, sql_query: str, db: AsyncSession = Depends(get_db)):
@@ -45,15 +46,15 @@ async def execute_sql(db_id: int, sql_query: str, db: AsyncSession = Depends(get
         db_uri = result.scalar_one_or_none()
         if not db_uri:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Database not found")
-        
+
         if db_uri.startswith("mysql://"):
-            db_uri = db_uri.replace("mysql://", "mysql+aiomysql://") # Replace with async MySQL driver
+            db_uri = db_uri.replace("mysql://", "mysql+aiomysql://")  # Replace with async MySQL driver
 
         engine = create_async_engine(db_uri, echo=False, future=True)
         async with engine.begin() as conn:
             result = await conn.execute(text(sql_query))
             response = result.mappings().all()
-        
+
         return {"data": response}
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Database error: {e}")

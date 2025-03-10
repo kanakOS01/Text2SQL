@@ -1,5 +1,6 @@
 from urllib.parse import urlparse
 
+
 def check_valid_uri(uri: str) -> bool:
     """
     Check if the URI is valid and return the scheme if it is valid
@@ -18,7 +19,7 @@ def check_valid_uri(uri: str) -> bool:
         return False
     except Exception:
         return False
-    
+
 
 def extract_scheme(uri: str) -> str:
     """

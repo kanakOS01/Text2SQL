@@ -1,12 +1,13 @@
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-from sqlalchemy import text
-from sqlalchemy.future import select
 from typing import List
 
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import text
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+from sqlalchemy.future import select
+
+from backend import schemas
 from backend.database import get_db
 from backend.models import UserDatabase
-from backend import schemas
 from backend.utils import check_valid_uri, extract_scheme
 
 router = APIRouter(prefix="/databases", tags=["Databases"])
@@ -77,25 +78,29 @@ async def get_database_schema(db_id: int, db: AsyncSession = Depends(get_db)):
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Database not found")
 
         if db_uri.startswith("mysql://"):
-            db_uri = db_uri.replace("mysql://", "mysql+aiomysql://") 
+            db_uri = db_uri.replace("mysql://", "mysql+aiomysql://")
 
         engine = create_async_engine(db_uri, echo=False, future=True)
         async with engine.begin() as conn:
             db_scheme = extract_scheme(db_uri)
-            
+
             if "mysql" in db_scheme:
-                schema_query = text("""
+                schema_query = text(
+                    """
                     SELECT COLUMN_NAME, COLUMN_TYPE, IS_NULLABLE, COLUMN_DEFAULT, COLUMN_KEY 
                     FROM INFORMATION_SCHEMA.COLUMNS 
                     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table_name;
-                """)
+                """
+                )
                 table_query = text("SHOW TABLES;")
             else:
-                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Unsupported database type: {db_scheme}")
-            
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST, detail=f"Unsupported database type: {db_scheme}"
+                )
+
             result = await conn.execute(table_query)
             tables = [row[0] for row in result.fetchall()]
-            
+
             schema_details = {}
 
             # Fetch schema details for each table
@@ -107,7 +112,7 @@ async def get_database_schema(db_id: int, db: AsyncSession = Depends(get_db)):
                         "data_type": row[1],
                         "nullable": row[2],
                         "default_value": row[3],
-                        "key": row[4] if len(row) > 4 else None  # MySQL-specific column key
+                        "key": row[4] if len(row) > 4 else None,  # MySQL-specific column key
                     }
                     for row in table_schema_result.fetchall()
                 ]

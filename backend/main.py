@@ -1,11 +1,10 @@
-from fastapi import FastAPI, Depends
-from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from backend.routers import databases, query
 from sqlalchemy import text
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.database import get_db
-
+from backend.routers import databases, query
 
 app = FastAPI(debug=True)
 ORIGINS = ["*"]

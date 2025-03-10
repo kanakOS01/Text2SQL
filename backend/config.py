@@ -1,5 +1,6 @@
 from pydantic_settings import BaseSettings
 
+
 class Settings(BaseSettings):
     DATABASE_URL: str
     DATABASE_URL_NON_ASYNC: str
@@ -9,6 +10,7 @@ class Settings(BaseSettings):
     OPENAI_API_KEY: str
 
     class Config:
-        env_file = '.env'
+        env_file = ".env"
+
 
 settings = Settings()

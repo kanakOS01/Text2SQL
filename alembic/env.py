@@ -1,7 +1,6 @@
 from logging.config import fileConfig
 
-from sqlalchemy import engine_from_config
-from sqlalchemy import pool
+from sqlalchemy import engine_from_config, pool
 
 from alembic import context
 
@@ -9,14 +8,12 @@ from alembic import context
 # access to the values within the .ini file in use.
 config = context.config
 
-## CUSTOM IMPORTS
-from backend.models import Base
 from backend.config import settings
 
-config.set_main_option(
-    "sqlalchemy.url",
-    settings.DATABASE_URL_NON_ASYNC
-)
+## CUSTOM IMPORTS
+from backend.models import Base
+
+config.set_main_option("sqlalchemy.url", settings.DATABASE_URL_NON_ASYNC)
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
@@ -73,9 +70,7 @@ def run_migrations_online() -> None:
     )
 
     with connectable.connect() as connection:
-        context.configure(
-            connection=connection, target_metadata=target_metadata
-        )
+        context.configure(connection=connection, target_metadata=target_metadata)
 
         with context.begin_transaction():
             context.run_migrations()
